@@ -6,9 +6,9 @@ export default function PlanPage() {
     <main>
       <Navbar />
       <div className="min-h-screen pt-24 px-4 bg-muted">
-        <div className="max-w-3xl mx-auto">
+        <div className="max-w-lg mx-auto">
           <h1 className="text-3xl font-bold text-center mb-8 text-gradient-sunrise">
-            Enter Your Flight Details
+            📍 Plan Your Flight
           </h1>
           <FlightForm />
         </div>

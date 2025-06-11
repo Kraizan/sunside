@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import InputField from './InputField';
-import type { FlightDetails, FormErrors } from '../lib/types';
+import type { FlightDetails, FormErrors } from '@/lib/types';
 
 export default function FlightForm() {
   const router = useRouter();
@@ -11,12 +11,45 @@ export default function FlightForm() {
     source: '',
     destination: '',
     departureTime: '',
-    duration: 0,
+    duration: 0
   });
   const [errors, setErrors] = useState<FormErrors>({});
 
+  // Restore form state from localStorage
+  useEffect(() => {
+    const savedData = localStorage.getItem('flightFormData');
+    if (savedData) {
+      try {
+        const parsedData = JSON.parse(savedData);
+        if (
+          parsedData.source &&
+          parsedData.destination &&
+          parsedData.departureTime &&
+          parsedData.duration
+        ) {
+          setFormData(parsedData);
+        }
+      } catch (error) {
+        console.error('Failed to parse flightFormData from localStorage:', error);
+      }
+    }
+  }, []);
+
+  // Save form state to localStorage
+  useEffect(() => {
+    localStorage.setItem('flightFormData', JSON.stringify(formData));
+  }, [formData]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    localStorage.setItem('flightFormData', JSON.stringify(
+      {
+        source: '',
+        destination: '',
+        departureTime: '',
+        duration: 0
+      }
+    ));
     
     // Basic validation
     const newErrors: FormErrors = {};
@@ -53,7 +86,8 @@ export default function FlightForm() {
         value={formData.source}
         onChange={handleChange}
         error={errors.source}
-        placeholder="e.g., London"
+        required
+        placeholder="e.g. BOS"
       />
       <InputField
         label="To (City or Airport)"
@@ -62,7 +96,8 @@ export default function FlightForm() {
         value={formData.destination}
         onChange={handleChange}
         error={errors.destination}
-        placeholder="e.g., New York"
+        required
+        placeholder="e.g. JFK"
       />
       <InputField
         label="Departure Time"
@@ -71,6 +106,8 @@ export default function FlightForm() {
         value={formData.departureTime}
         onChange={handleChange}
         error={errors.departureTime}
+        required
+        placeholder="Select departure time"
       />
       <InputField
         label="Flight Duration (minutes)"
@@ -79,11 +116,12 @@ export default function FlightForm() {
         value={formData.duration}
         onChange={handleChange}
         error={errors.duration}
-        placeholder="e.g., 120"
+        required
+        placeholder="e.g. 120"
       />
       <button
         type="submit"
-        className="w-full py-3 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+        className="btn btn-primary w-full"
       >
         Get Seat Recommendation
       </button>
