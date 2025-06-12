@@ -11,3 +11,23 @@ export interface FormErrors {
   departureTime?: string;
   duration?: string;
 }
+
+export interface VisibilityWindow {
+  start: string;
+  end: string;
+  durationMinutes: number;
+  sunriseEvents: SunEvent[];
+  sunsetEvents: SunEvent[];
+}
+
+export interface SeatRecommendation {
+  side: 'LEFT' | 'RIGHT';
+  reason: string;
+  visibilityWindow?: VisibilityWindow;
+}
+
+export interface SunEvent {
+  time: string;
+  location: [number, number];
+  type: 'sunrise' | 'sunset';
+}

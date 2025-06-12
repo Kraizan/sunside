@@ -4,8 +4,12 @@ import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Navbar from '@/components/Navbar';
 import ResultSummary from '@/components/ResultSummary';
-import { parseFlightDetails } from '@/lib/utils';
+import { parseFlightDetails, generateRecommendation } from '@/lib/utils';
+import * as turf from '@turf/turf';
 import { Airport } from '@/types/airport';
+import { SeatRecommendation } from '@/types/flight';
+import { FlightMap } from '@/components/FlightMap';
+import { Feature, LineString } from 'geojson';
 
 export default function ResultPage() {
   const searchParams = useSearchParams();
@@ -16,6 +20,9 @@ export default function ResultPage() {
     source: null,
     destination: null
   });
+  const [recommendation, setRecommendation] = useState<SeatRecommendation | null>(null);
+  const [flightPath, setFlightPath] = useState<Feature<LineString> | undefined>(undefined);
+  const [sunEvents, setSunEvents] = useState([]);
 
   useEffect(() => {
     async function fetchAirportData() {
@@ -28,31 +35,6 @@ export default function ResultPage() {
         if ('error' in sourceData || 'error' in destData) {
           throw new Error('Could not find airport data');
         }
-
-        // Log all fields from the API response
-        console.log('Source Airport Data:', {
-          ICAO: sourceData.icao,
-          IATA: sourceData.iata,
-          Name: sourceData.name,
-          Location: sourceData.location,
-          Country: sourceData.country,
-          Region: sourceData.region,
-          TimeZone: sourceData.timeZone,
-          Elevation: sourceData.elevation,
-          Municipality: sourceData.municipality
-        });
-
-        console.log('Destination Airport Data:', {
-          ICAO: destData.icao,
-          IATA: destData.iata,
-          Name: destData.name,
-          Location: destData.location,
-          Country: destData.country,
-          Region: destData.region,
-          TimeZone: destData.timeZone,
-          Elevation: destData.elevation,
-          Municipality: destData.municipality
-        });
 
         setAirports({
           source: sourceData as Airport,
@@ -72,8 +54,22 @@ export default function ResultPage() {
     }
   }, [flightDetails.source, flightDetails.destination]);
 
-  // Placeholder logic - will be replaced with actual calculation
-  const recommendedSide = Math.random() > 0.5 ? 'LEFT' : 'RIGHT';
+  useEffect(() => {
+    if (airports.source && airports.destination) {
+      const path = turf.greatCircle(
+        [airports.source.location.lon, airports.source.location.lat],
+        [airports.destination.location.lon, airports.destination.location.lat],
+        { npoints: Math.floor(flightDetails.duration / 5) }
+      );
+
+      // Ensure we're working with a LineString
+      if (path.geometry.type === 'LineString') {
+        setFlightPath(path as Feature<LineString>);
+        const rec = generateRecommendation(flightDetails, airports.source, airports.destination);
+        setRecommendation(rec);
+      }
+    }
+  }, [airports.source, airports.destination]);
 
   if (loading) {
     return <div>Loading...</div>;
@@ -87,10 +83,22 @@ export default function ResultPage() {
     <main>
       <Navbar />
       <div className="min-h-screen pt-24 px-4 bg-muted">
-        <ResultSummary 
-          flightDetails={flightDetails}
-          recommendedSide={recommendedSide}
-        />
+        {airports.source && airports.destination && (
+          <div className="max-w-5xl mx-auto space-y-8">
+            <FlightMap 
+              sourceAirport={airports.source}
+              destAirport={airports.destination}
+              flightPath={flightPath}
+              sunEvents={sunEvents}
+            />
+            {recommendation && (
+              <ResultSummary 
+                flightDetails={flightDetails}
+                recommendation={recommendation}
+              />
+            )}
+          </div>
+        )}
       </div>
     </main>
   );

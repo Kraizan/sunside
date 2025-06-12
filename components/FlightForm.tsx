@@ -64,7 +64,6 @@ export default function FlightForm() {
       return;
     }
 
-    // Create query string
     const queryString = new URLSearchParams(formData as any).toString();
     router.push(`/result?${queryString}`);
   };

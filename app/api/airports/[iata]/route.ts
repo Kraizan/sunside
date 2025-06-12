@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import Airport from "@/models/Airport";
 
-const AERODATA_API_KEY = process.env.NEXT_PUBLIC_AERODATA_API_KEY!;
-const AERODATA_BASE_URL = process.env.NEXT_PUBLIC_AERODATA_BASE_URL!;
+const AERODATA_API_KEY = process.env.AERODATA_API_KEY!;
+const AERODATA_BASE_URL = process.env.AERODATA_BASE_URL!;
 
 if (!AERODATA_API_KEY || !AERODATA_BASE_URL) {
   throw new Error('Missing required environment variables');
@@ -13,7 +13,8 @@ export async function GET(
   request: Request,
   { params }: { params: { iata: string } }
 ) {
-  const { iata } = params;
+  const iataParam = params;
+  const iata = (await iataParam).iata;
 
   if (!iata || typeof iata !== 'string' || iata.length !== 3) {
     return NextResponse.json(

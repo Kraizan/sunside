@@ -1,8 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
-
-interface Props {
+interface InputFieldProps {
   label: string;
   name: string;
   value: string;
@@ -20,7 +18,7 @@ export default function AirportInput({
   error,
   required,
   placeholder
-}: Props) {
+}: InputFieldProps) {
   return (
     <div className="space-y-2">
       <label htmlFor={name} className="block text-sm font-medium text-foreground">

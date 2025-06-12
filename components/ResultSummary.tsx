@@ -1,11 +1,11 @@
-import { FlightDetails } from '@/types/flight';
+import { FlightDetails, SeatRecommendation } from '@/types/flight';
 
 interface ResultSummaryProps {
   flightDetails: FlightDetails;
-  recommendedSide: 'LEFT' | 'RIGHT';
+  recommendation: SeatRecommendation;
 }
 
-export default function ResultSummary({ flightDetails, recommendedSide }: ResultSummaryProps) {
+export default function ResultSummary({ flightDetails, recommendation }: ResultSummaryProps) {
   const formattedDate = new Date(flightDetails.departureTime).toLocaleString();
 
   return (
@@ -31,12 +31,17 @@ export default function ResultSummary({ flightDetails, recommendedSide }: Result
       <div className="text-center p-6 bg-gradient-sunset rounded-xl">
         <h3 className="text-xl font-semibold mb-2 text-white">Recommended Seat Side</h3>
         <div className="text-4xl font-bold mb-4 text-white">
-          {recommendedSide === 'LEFT' ? '← LEFT' : 'RIGHT →'}
+          {recommendation.side === 'LEFT' ? '← LEFT' : 'RIGHT →'}
           <span className="ml-2">🌅</span>
         </div>
-        <p className="text-white">
-          For the best sunrise/sunset views during your flight
-        </p>
+        <p className="text-white mb-4">{recommendation.reason}</p>
+        {recommendation.visibilityWindow && (
+          <div className="text-sm text-white/80">
+            Best viewing time: {recommendation.visibilityWindow.start} - {recommendation.visibilityWindow.end}
+            <br />
+            ({recommendation.visibilityWindow.durationMinutes} minutes)
+          </div>
+        )}
       </div>
     </div>
   );
