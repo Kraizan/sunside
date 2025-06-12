@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import InputField from './InputField';
 import AirportInput from './AirportInput';
-import type { FlightDetails, FormErrors } from '@/lib/types';
+import type { FlightDetails, FormErrors } from '@/types/flight';
 
 export default function FlightForm() {
   const router = useRouter();

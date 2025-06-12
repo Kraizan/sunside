@@ -1,4 +1,4 @@
-import { FlightDetails } from '@/lib/types';
+import { FlightDetails } from '@/types/flight';
 
 interface ResultSummaryProps {
   flightDetails: FlightDetails;

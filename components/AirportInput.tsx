@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { airports } from '@/data/airports';
 
 interface Props {
   label: string;
