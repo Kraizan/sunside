@@ -3,7 +3,7 @@ export interface FlightDetails {
   source: string;
   destination: string;
   departureTime: string;
-  duration: number;
+  duration: number; 
 }
 
 // Form validation types
@@ -12,4 +12,13 @@ export interface FormErrors {
   destination?: string;
   departureTime?: string;
   duration?: string;
+}
+
+export function parseFlightDetails(params: URLSearchParams): FlightDetails {
+  return {
+    source: params.get('source') || '',
+    destination: params.get('destination') || '',
+    departureTime: params.get('departureTime') || '',
+    duration: Number(params.get('duration')) || 0,
+  };
 }

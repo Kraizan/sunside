@@ -1,10 +1,7 @@
+import { FlightDetails } from '@/lib/types';
+
 interface ResultSummaryProps {
-  flightDetails: {
-    source: string;
-    destination: string;
-    departureTime: string;
-    duration: string;
-  };
+  flightDetails: FlightDetails;
   recommendedSide: 'LEFT' | 'RIGHT';
 }
 
@@ -27,7 +24,7 @@ export default function ResultSummary({ flightDetails, recommendedSide }: Result
         </div>
         <div className="flex justify-between p-4 bg-muted rounded-lg">
           <span className="text-gray-600">Duration</span>
-          <span className="font-medium">{flightDetails.duration} minutes</span>
+          <span className="font-medium">{Math.round(flightDetails.duration)} minutes</span>
         </div>
       </div>
 

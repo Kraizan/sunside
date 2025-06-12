@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import InputField from './InputField';
+import AirportInput from './AirportInput';
 import type { FlightDetails, FormErrors } from '@/lib/types';
 
 export default function FlightForm() {
@@ -71,7 +72,6 @@ export default function FlightForm() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-    // Clear error when user types
     if (errors[name as keyof FormErrors]) {
       setErrors(prev => ({ ...prev, [name]: undefined }));
     }
@@ -79,9 +79,8 @@ export default function FlightForm() {
 
   return (
     <form onSubmit={handleSubmit} className="max-w-md w-full mx-auto space-y-6">
-      <InputField
+      <AirportInput
         label="From (City or Airport)"
-        type="text"
         name="source"
         value={formData.source}
         onChange={handleChange}
@@ -89,9 +88,8 @@ export default function FlightForm() {
         required
         placeholder="e.g. BOS"
       />
-      <InputField
+      <AirportInput
         label="To (City or Airport)"
-        type="text"
         name="destination"
         value={formData.destination}
         onChange={handleChange}
