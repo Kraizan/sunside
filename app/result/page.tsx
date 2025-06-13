@@ -22,7 +22,6 @@ export default function ResultPage() {
   });
   const [recommendation, setRecommendation] = useState<SeatRecommendation | null>(null);
   const [flightPath, setFlightPath] = useState<Feature<LineString> | undefined>(undefined);
-  const [sunEvents, setSunEvents] = useState([]);
 
   useEffect(() => {
     async function fetchAirportData() {
@@ -56,18 +55,17 @@ export default function ResultPage() {
 
   useEffect(() => {
     if (airports.source && airports.destination) {
-      const path = turf.greatCircle(
+      const coordinates = [
         [airports.source.location.lon, airports.source.location.lat],
-        [airports.destination.location.lon, airports.destination.location.lat],
-        { npoints: Math.floor(flightDetails.duration / 5) }
-      );
-
-      // Ensure we're working with a LineString
-      if (path.geometry.type === 'LineString') {
-        setFlightPath(path as Feature<LineString>);
-        const rec = generateRecommendation(flightDetails, airports.source, airports.destination);
-        setRecommendation(rec);
-      }
+        [airports.destination.location.lon, airports.destination.location.lat]
+      ];
+      
+      const path = turf.lineString(coordinates);
+      const smooth = turf.bezierSpline(path, { resolution: 10000, sharpness: 0.85 });
+      setFlightPath(smooth as Feature<LineString>);
+      
+      const rec = generateRecommendation(flightDetails, airports.source, airports.destination);
+      setRecommendation(rec);
     }
   }, [airports.source, airports.destination]);
 
@@ -89,7 +87,6 @@ export default function ResultPage() {
               sourceAirport={airports.source}
               destAirport={airports.destination}
               flightPath={flightPath}
-              sunEvents={sunEvents}
             />
             {recommendation && (
               <ResultSummary 

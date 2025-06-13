@@ -1,3 +1,5 @@
+import { SunEvent } from './sun';
+
 export interface FlightDetails {
   source: string;
   destination: string;
@@ -23,11 +25,5 @@ export interface VisibilityWindow {
 export interface SeatRecommendation {
   side: 'LEFT' | 'RIGHT';
   reason: string;
-  visibilityWindow?: VisibilityWindow;
-}
-
-export interface SunEvent {
-  time: string;
-  location: [number, number];
-  type: 'sunrise' | 'sunset';
+  visibilityWindow: VisibilityWindow;
 }

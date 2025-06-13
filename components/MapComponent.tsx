@@ -28,7 +28,6 @@ export function MapComponent({
   sourceAirport,
   destAirport,
   flightPath,
-  sunEvents,
 }: MapComponentProps) {
   const bounds = useMemo(() => {
     return new LatLngBounds(
@@ -40,7 +39,7 @@ export function MapComponent({
   return (
     <MapContainer
       bounds={bounds}
-      style={{ height: "400px", width: "100%" }}
+      style={{ height: "600px", width: "100%" }}
       className="rounded-lg"
     >
       <TileLayer

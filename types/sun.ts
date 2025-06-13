@@ -5,6 +5,9 @@ export interface SunPosition {
 
 export interface SunEvent {
   time: string;
-  location: [number, number];
+  location:{
+    lat: number;
+    lon: number;
+  };
   type: 'sunrise' | 'sunset';
 }
