@@ -36,6 +36,36 @@ export default function ResultSummary({ flightDetails, recommendation }: ResultS
         </div>
         <p className="text-white mb-4">{recommendation.reason}</p>
       </div>
+
+      <div className="mt-8">
+        <h3 className="text-xl font-semibold mb-4">Sun Events</h3>
+        {(!recommendation.sunrise && !recommendation.sunset) ? (
+          <p className="text-gray-600">
+            You won't experience any sunrise or sunset during this flight.
+          </p>
+        ) : (
+          <div className="space-y-4">
+            {recommendation.sunrise && (
+              <div className="p-4 bg-muted rounded-lg">
+                <h4 className="font-medium">Sunrise</h4>
+                <p>{recommendation.sunrise.time.toLocaleTimeString()}</p>
+                <p className="text-sm text-gray-600">
+                  at {recommendation.sunrise.location.lat.toFixed(2)}°N, {recommendation.sunrise.location.lon.toFixed(2)}°E
+                </p>
+              </div>
+            )}
+            {recommendation.sunset && (
+              <div className="p-4 bg-muted rounded-lg">
+                <h4 className="font-medium">Sunset</h4>
+                <p>{recommendation.sunset.time.toLocaleTimeString()}</p>
+                <p className="text-sm text-gray-600">
+                  at {recommendation.sunset.location.lat.toFixed(2)}°N, {recommendation.sunset.location.lon.toFixed(2)}°E
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

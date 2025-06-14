@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import InputField from './InputField';
 import AirportInput from './AirportInput';
-import type { FlightDetails, FormErrors } from '@/types/flight';
+import type { FlightDetails, FormErrors, SunPreference } from '@/types/flight';
 
 export default function FlightForm() {
   const router = useRouter();
@@ -15,6 +15,11 @@ export default function FlightForm() {
     duration: 0
   });
   const [errors, setErrors] = useState<FormErrors>({});
+  const [sunPreference, setSunPreference] = useState<SunPreference>({
+    wantsSunrise: false,
+    wantsSunset: false,
+    priority: null
+  });
 
   // Restore form state from localStorage
   useEffect(() => {
@@ -64,8 +69,13 @@ export default function FlightForm() {
       return;
     }
 
-    const queryString = new URLSearchParams(formData as any).toString();
-    router.push(`/result?${queryString}`);
+    const queryParams = new URLSearchParams({
+      ...formData as any,
+      wantsSunrise: sunPreference.wantsSunrise.toString(),
+      wantsSunset: sunPreference.wantsSunset.toString(),
+      priority: sunPreference.priority || ''
+    });
+    router.push(`/result?${queryParams}`);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -74,6 +84,17 @@ export default function FlightForm() {
     if (errors[name as keyof FormErrors]) {
       setErrors(prev => ({ ...prev, [name]: undefined }));
     }
+  };
+
+  const handleSunPreferenceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, checked } = e.target;
+    setSunPreference(prev => ({
+      ...prev,
+      [name]: checked,
+      priority: name === 'wantsSunrise' && checked ? 'SUNRISE' : 
+               name === 'wantsSunset' && checked ? 'SUNSET' : 
+               prev.priority
+    }));
   };
 
   return (
@@ -116,6 +137,33 @@ export default function FlightForm() {
         required
         placeholder="e.g. 120"
       />
+      
+      <div className="space-y-4">
+        <h3 className="text-lg font-medium">Sun Preferences</h3>
+        <div className="flex items-center space-x-2">
+          <input
+            type="checkbox"
+            id="wantsSunrise"
+            name="wantsSunrise"
+            checked={sunPreference.wantsSunrise}
+            onChange={handleSunPreferenceChange}
+            className="checkbox"
+          />
+          <label htmlFor="wantsSunrise">I want to see the sunrise</label>
+        </div>
+        <div className="flex items-center space-x-2">
+          <input
+            type="checkbox"
+            id="wantsSunset"
+            name="wantsSunset"
+            checked={sunPreference.wantsSunset}
+            onChange={handleSunPreferenceChange}
+            className="checkbox"
+          />
+          <label htmlFor="wantsSunset">I want to see the sunset</label>
+        </div>
+      </div>
+
       <button
         type="submit"
         className="btn btn-primary w-full"

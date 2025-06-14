@@ -15,4 +15,18 @@ export interface FormErrors {
 export interface SeatRecommendation {
   side: 'LEFT' | 'RIGHT';
   reason: string;
+  sunrise?: {
+    time: Date;
+    location: { lat: number; lon: number; }
+  };
+  sunset?: {
+    time: Date;
+    location: { lat: number; lon: number; }
+  };
+}
+
+export interface SunPreference {
+  wantsSunrise: boolean;
+  wantsSunset: boolean;
+  priority: 'SUNRISE' | 'SUNSET' | null;
 }
