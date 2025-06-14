@@ -2,7 +2,6 @@
 
 import { MapComponentProps } from "@/types/map";
 import {
-  useMap,
   MapContainer,
   TileLayer,
   Marker,
@@ -10,11 +9,12 @@ import {
   Polyline,
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import L, { Icon, LatLngBounds } from "leaflet";
-import { useState, useMemo, useEffect } from "react";
+import { Icon, LatLngBounds } from "leaflet";
+import { useState, useMemo } from "react";
 import { SunSlider } from "./SunSlider";
 import * as turf from "@turf/turf";
 import { getSubsolarPoint } from '@/lib/utils';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const startIcon = new Icon({
   iconUrl: "/marker-start.png",
@@ -32,6 +32,13 @@ const sunIcon = new Icon({
   iconUrl: "/sun-marker.png",
   iconSize: [32, 32],
   iconAnchor: [16, 16],
+});
+
+const customSunIcon = new Icon({
+  iconUrl: "/sun-marker.png",
+  iconSize: [32, 32],
+  iconAnchor: [16, 16],
+  className: 'sun' // Apply glow effect
 });
 
 export function MapComponent({
@@ -76,14 +83,18 @@ export function MapComponent({
   }, [sourceAirport, destAirport]);
 
   return (
-    <div className="space-y-4">
+    <motion.div 
+      className="space-y-4 w-full"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
       <MapContainer
         bounds={bounds}
-        style={{ height: "600px", width: "100%" }}
-        className="rounded-lg"
+        className="rounded-2xl shadow-lg h-[600px] w-full"
       >
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
@@ -107,25 +118,36 @@ export function MapComponent({
               lat,
               lng,
             ])}
-            color="#0066cc"
+            pathOptions={{
+              color: 'blue',
+              weight: 3,
+            }}
           />
         )}
 
         {currentPosition && (
-          <Marker
-            position={currentPosition}
-            icon={new Icon({
-              iconUrl: "/plane.png",
-              iconSize: [24, 24],
-              iconAnchor: [12, 12],
-            })}
-          />
+          <AnimatePresence>
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0 }}
+            >
+              <Marker
+                position={currentPosition}
+                icon={new Icon({
+                  iconUrl: "/plane.png",
+                  iconSize: [24, 24],
+                  iconAnchor: [12, 12],
+                })}
+              />
+            </motion.div>
+          </AnimatePresence>
         )}
 
         {sunPosition && (
           <>
-            <Marker position={sunPosition} icon={sunIcon}>
-              <Popup>
+            <Marker position={sunPosition} icon={customSunIcon}>
+              <Popup className="themed-popup">
                 Subsolar Point<br/>
                 Lat: {sunPosition[0].toFixed(2)}°<br/>
                 Lon: {sunPosition[1].toFixed(2)}°
@@ -134,9 +156,11 @@ export function MapComponent({
             {currentPosition && (
               <Polyline
                 positions={[currentPosition, sunPosition]}
-                color="#FFD700"
-                dashArray="5,10"
-                opacity={0.6}
+                pathOptions={{
+                  color: 'var(--color-sunrise-500)',
+                  dashArray: '4',
+                  weight: 3
+                }}
               />
             )}
           </>
@@ -148,6 +172,6 @@ export function MapComponent({
         startTime={startTime}
         onTimeChange={handleTimeChange}
       />
-    </div>
+    </motion.div>
   );
 }

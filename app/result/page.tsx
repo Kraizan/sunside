@@ -82,13 +82,14 @@ export default function ResultPage() {
       <Navbar />
       <div className="min-h-screen pt-24 px-4 bg-muted">
         {airports.source && airports.destination && (
-          <div className="max-w-5xl mx-auto space-y-8">
+          <div className="flex space-x-8 w-full py-8">
             <FlightMap 
               sourceAirport={airports.source}
               destAirport={airports.destination}
               flightPath={flightPath}
               startTime={new Date(flightDetails.departureTime)}
               durationMinutes={flightDetails.duration}
+              className='w-3/5 px-5'
             />
             {recommendation && (
               <ResultSummary 
