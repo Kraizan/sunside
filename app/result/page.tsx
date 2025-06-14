@@ -4,7 +4,7 @@ import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Navbar from '@/components/Navbar';
 import ResultSummary from '@/components/ResultSummary';
-import { parseFlightDetails, generateRecommendation } from '@/lib/utils';
+import { parseFlightDetails, generateAdvancedRecommendation } from '@/lib/utils';
 import * as turf from '@turf/turf';
 import { Airport } from '@/types/airport';
 import { SeatRecommendation } from '@/types/flight';
@@ -64,7 +64,7 @@ export default function ResultPage() {
       const smooth = turf.bezierSpline(path, { resolution: 10000, sharpness: 0.85 });
       setFlightPath(smooth as Feature<LineString>);
       
-      const rec = generateRecommendation(flightDetails, airports.source, airports.destination);
+      const rec = generateAdvancedRecommendation(flightDetails, airports.source, airports.destination);
       setRecommendation(rec);
     }
   }, [airports.source, airports.destination]);

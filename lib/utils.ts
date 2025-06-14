@@ -1,61 +1,103 @@
 import { FlightDetails, SeatRecommendation } from '@/types/flight';
 import { Airport } from '@/types/airport';
 import SunCalc from 'suncalc';
-import { bearing } from '@turf/bearing';
+import * as turf from '@turf/turf';
+
+export function parseFlightDetails(searchParams: URLSearchParams): FlightDetails {
+  const source = searchParams.get('source') || '';
+  const destination = searchParams.get('destination') || '';
+  const departureTime = searchParams.get('departureTime') || new Date().toISOString();
+  const duration = parseInt(searchParams.get('duration') || '0', 10);
+  return {
+    source,
+    destination,
+    departureTime: new Date(departureTime).toISOString(),
+    duration: isNaN(duration) ? 0 : duration
+  };
+}
 
 export function getBearing(srcCoords: [number, number], destCoords: [number, number]): number {
-  return bearing(
+  return turf.bearing(
     [srcCoords[1], srcCoords[0]],
     [destCoords[1], destCoords[0]]
   );
 }
 
-export function getSunPosition(time: Date, coords: [number, number]): number {
+export function getSunAzimuthAt(time: Date, coords: [number, number]): number {
   const sunPos = SunCalc.getPosition(time, coords[0], coords[1]);
-  return (sunPos.azimuth * 180) / Math.PI - 180;
+  return ((sunPos.azimuth * 180) / Math.PI + 180) % 360;
 }
 
 export function recommendSide(flightDir: number, sunAzimuth: number): 'LEFT' | 'RIGHT' {
-  const relativeSunAngle = (sunAzimuth - flightDir + 360) % 360;
-  return relativeSunAngle > 0 && relativeSunAngle <= 180 ? 'RIGHT' : 'LEFT';
+  const relativeAngle = (sunAzimuth - flightDir + 360) % 360;
+  if (relativeAngle === 0 || relativeAngle === 360 || relativeAngle === 180) {
+    return 'LEFT'; // default side when directly in front/back (could also be "NEUTRAL")
+  }
+  return relativeAngle > 0 && relativeAngle <= 180 ? 'RIGHT' : 'LEFT';
 }
 
-export function parseFlightDetails(params: URLSearchParams): FlightDetails {
-  return {
-    source: params.get('source') || '',
-    destination: params.get('destination') || '',
-    departureTime: params.get('departureTime') || '',
-    duration: Number(params.get('duration')) || 0,
-  };
-}
-
-export function generateRecommendation(
+export function generateAdvancedRecommendation(
   flightDetails: FlightDetails,
   sourceAirport: Airport,
   destAirport: Airport
 ): SeatRecommendation {
   const departureTime = new Date(flightDetails.departureTime);
+  const duration = flightDetails.duration;
+  const intervalMinutes = 1;
+
   const sourceCoords: [number, number] = [
-    sourceAirport.location.lat,
-    sourceAirport.location.lon
+    sourceAirport.location.lon,
+    sourceAirport.location.lat
   ];
   const destCoords: [number, number] = [
-    destAirport.location.lat,
-    destAirport.location.lon
+    destAirport.location.lon,
+    destAirport.location.lat
   ];
+  const bearing = turf.bearing(sourceCoords, destCoords);
 
-  const flightBearing = getBearing(sourceCoords, destCoords);
-  const sunAzimuth = getSunPosition(departureTime, sourceCoords);
-  const recommendedSide = recommendSide(flightBearing, sunAzimuth);
+  const path = turf.lineString([
+    [sourceCoords[1], sourceCoords[0]],
+    [destCoords[1], destCoords[0]],
+  ]);
+  const length = turf.length(path);
+  
+  let leftCount = 0;
+  let rightCount = 0;
+  let sunriseSeen = false;
+  let sunsetSeen = false;
 
-  const reason = `The sun will be on your ${recommendedSide.toLowerCase()} side during the flight, ` +
-    `as you'll be flying towards ${Math.round(flightBearing)}° with the sun at ${Math.round(sunAzimuth)}°.`;
+  for (let i = 0; i <= duration; i += intervalMinutes) {
+    const currentTime = new Date(departureTime.getTime() + i * 60 * 1000);
+    const dist = (i / duration) * length;
+    const [lat, lon] = turf.along(path, dist).geometry.coordinates;
+
+    const azimuthDeg = getSunAzimuthAt(currentTime, [lat, lon]);
+
+    const side = recommendSide(bearing, azimuthDeg);
+    if (side === 'LEFT') leftCount++;
+    else rightCount++;
+
+    const times = SunCalc.getTimes(currentTime, lat, lon);
+    const timeDiff = Math.abs(times.sunrise.getTime() - currentTime.getTime());
+    const sunsetDiff = Math.abs(times.sunset.getTime() - currentTime.getTime());
+
+    if (timeDiff < 15 * 60 * 1000) sunriseSeen = true;
+    if (sunsetDiff < 15 * 60 * 1000) sunsetSeen = true;
+  }
+
+  const side = leftCount > rightCount ? 'LEFT' : 'RIGHT';
+  let reason = `The sun is mostly on the ${side.toLowerCase()} side during your journey.`;
+
+  if (sunriseSeen || sunsetSeen) {
+    reason += ` You might also catch a ${sunriseSeen ? 'sunrise' : ''}${sunriseSeen && sunsetSeen ? ' and ' : ''}${sunsetSeen ? 'sunset' : ''}.`;
+  }
 
   return {
-    side: recommendedSide,
+    side,
     reason
   };
 }
+
 
 export function getSubsolarPoint(date: Date) {
   const rad = Math.PI / 180;
