@@ -87,6 +87,8 @@ export default function ResultPage() {
               sourceAirport={airports.source}
               destAirport={airports.destination}
               flightPath={flightPath}
+              startTime={new Date(flightDetails.departureTime)}
+              durationMinutes={flightDetails.duration}
             />
             {recommendation && (
               <ResultSummary 

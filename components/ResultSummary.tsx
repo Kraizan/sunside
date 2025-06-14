@@ -35,13 +35,6 @@ export default function ResultSummary({ flightDetails, recommendation }: ResultS
           <span className="ml-2">🌅</span>
         </div>
         <p className="text-white mb-4">{recommendation.reason}</p>
-        {recommendation.visibilityWindow && (
-          <div className="text-sm text-white/80">
-            Best viewing time: {recommendation.visibilityWindow.start} - {recommendation.visibilityWindow.end}
-            <br />
-            ({recommendation.visibilityWindow.durationMinutes} minutes)
-          </div>
-        )}
       </div>
     </div>
   );

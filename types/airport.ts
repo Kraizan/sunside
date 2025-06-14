@@ -1,7 +1,8 @@
 export interface Airport {
   icao: string;
   iata: string;
-  name: string;
+  shortName: string;
+  fullName: string;
   location: {
     lat: number;
     lon: number;
