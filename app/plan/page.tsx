@@ -1,18 +1,23 @@
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Navbar from '@/components/Navbar';
 import FlightForm from '@/components/FlightForm';
 
 export default function PlanPage() {
   return (
-    <main>
+    <main className="min-h-screen bg-muted">
       <Navbar />
-      <div className="min-h-screen pt-24 px-4 bg-muted">
-        <div className="max-w-lg mx-auto">
-          <h1 className="text-3xl font-bold text-center mb-8 text-gradient-sunrise">
-            📍 Plan Your Flight
-          </h1>
-          <FlightForm />
-        </div>
-      </div>
+      <section className="flex flex-col items-center justify-center pt-28 px-4">
+        <Card className="w-full max-w-xl shadow-xl border border-border">
+          <CardHeader>
+            <CardTitle className="text-center text-3xl font-semibold text-foreground">
+              📍 Plan Your Flight
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <FlightForm />
+          </CardContent>
+        </Card>
+      </section>
     </main>
   );
 }

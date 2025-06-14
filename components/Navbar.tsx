@@ -1,10 +1,10 @@
 "use client";
 
 import Link from 'next/link';
-import { useTheme } from '@/context/ThemeContext';
+import { useTheme } from "next-themes"
 
 export default function Navbar() {
-  const { theme, toggleTheme } = useTheme();
+  const { theme, setTheme } = useTheme()
 
   return (
     <nav className="fixed top-0 left-0 right-0 p-4 bg-card/80 backdrop-blur-sm border-b z-10">
@@ -20,7 +20,7 @@ export default function Navbar() {
             Plan Flight
           </Link>
           <button
-            onClick={toggleTheme}
+            onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
             className="text-xl p-2 rounded-full bg-secondary-button text-secondary-button-foreground hover:bg-secondary-button/90 transition-colors"
             aria-label="Toggle Theme"
           >

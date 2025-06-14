@@ -6,6 +6,13 @@ import {
 import { Airport } from "@/types/airport";
 import * as turf from "@turf/turf";
 let SunCalc = require("suncalc3");
+import { clsx, type ClassValue } from "clsx"
+import { twMerge } from "tailwind-merge"
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
+
 
 export function parseFlightDetails(
   searchParams: URLSearchParams
@@ -29,16 +36,6 @@ export function parseFlightDetails(
         (searchParams.get("priority") as "SUNRISE" | "SUNSET" | null) || null,
     },
   };
-}
-
-export function getBearing(
-  srcCoords: [number, number],
-  destCoords: [number, number]
-): number {
-  return turf.bearing(
-    [srcCoords[1], srcCoords[0]],
-    [destCoords[1], destCoords[0]]
-  );
 }
 
 export function getSunAzimuthAt(time: Date, coords: [number, number]): number {
@@ -76,10 +73,7 @@ export function generateAdvancedRecommendation(
   ];
   const bearing = turf.bearing(sourceCoords, destCoords);
 
-  const path = turf.lineString([
-    [sourceCoords[1], sourceCoords[0]],
-    [destCoords[1], destCoords[0]],
-  ]);
+  const path = turf.lineString([sourceCoords, destCoords]);
   const length = turf.length(path);
 
   let leftCount = 0;
@@ -91,7 +85,7 @@ export function generateAdvancedRecommendation(
   for (let i = 0; i <= duration; i += intervalMinutes) {
     const currentTime = new Date(departureTime.getTime() + i * 60 * 1000);
     const dist = (i / duration) * length;
-    const [lat, lon] = turf.along(path, dist).geometry.coordinates;
+    const [lon, lat] = turf.along(path, dist).geometry.coordinates;
 
     const azimuthDeg = getSunAzimuthAt(currentTime, [lat, lon]);
 

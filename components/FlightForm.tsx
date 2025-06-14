@@ -2,8 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import InputField from './InputField';
-import AirportInput from './AirportInput';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+
 import type { FlightDetails, FormErrors, SunPreference } from '@/types/flight';
 
 export default function FlightForm() {
@@ -14,6 +18,7 @@ export default function FlightForm() {
     departureTime: '',
     duration: 0
   });
+
   const [errors, setErrors] = useState<FormErrors>({});
   const [sunPreference, setSunPreference] = useState<SunPreference>({
     wantsSunrise: false,
@@ -21,53 +26,36 @@ export default function FlightForm() {
     priority: null
   });
 
-  // Restore form state from localStorage
   useEffect(() => {
-    const savedData = localStorage.getItem('flightFormData');
-    if (savedData) {
+    const saved = localStorage.getItem('flightFormData');
+    if (saved) {
       try {
-        const parsedData = JSON.parse(savedData);
-        if (
-          parsedData.source &&
-          parsedData.destination &&
-          parsedData.departureTime &&
-          parsedData.duration
-        ) {
-          setFormData(parsedData);
-        }
-      } catch (error) {
-        console.error('Failed to parse flightFormData from localStorage:', error);
+        const parsed = JSON.parse(saved);
+        setFormData(parsed);
+      } catch (err) {
+        console.error('Invalid localStorage data:', err);
       }
     }
   }, []);
 
-  // Save form state to localStorage
   useEffect(() => {
     localStorage.setItem('flightFormData', JSON.stringify(formData));
   }, [formData]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    localStorage.setItem('flightFormData', JSON.stringify(
-      {
-        source: '',
-        destination: '',
-        departureTime: '',
-        duration: 0
-      }
-    ));
-    
-    // Basic validation
     const newErrors: FormErrors = {};
-    if (!formData.source) newErrors.source = 'Source is required';
-    if (!formData.destination) newErrors.destination = 'Destination is required';
-    if (!formData.departureTime) newErrors.departureTime = 'Departure time is required';
-    if (!formData.duration) newErrors.duration = 'Duration is required';
+    if (!formData.source) newErrors.source = 'Source required';
+    if (!formData.destination) newErrors.destination = 'Destination required';
+    if (!formData.departureTime) newErrors.departureTime = 'Departure time required';
+    if (!formData.duration) newErrors.duration = 'Duration required';
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
     }
+
+    localStorage.removeItem('flightFormData');
 
     const queryParams = new URLSearchParams({
       ...formData as any,
@@ -75,6 +63,7 @@ export default function FlightForm() {
       wantsSunset: sunPreference.wantsSunset.toString(),
       priority: sunPreference.priority || ''
     });
+
     router.push(`/result?${queryParams}`);
   };
 
@@ -86,90 +75,110 @@ export default function FlightForm() {
     }
   };
 
-  const handleSunPreferenceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCheckbox = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, checked } = e.target;
     setSunPreference(prev => ({
       ...prev,
       [name]: checked,
-      priority: name === 'wantsSunrise' && checked ? 'SUNRISE' : 
-               name === 'wantsSunset' && checked ? 'SUNSET' : 
-               prev.priority
+      priority:
+        name === 'wantsSunrise' && checked ? 'SUNRISE' :
+        name === 'wantsSunset' && checked ? 'SUNSET' :
+        prev.priority
     }));
   };
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-md w-full mx-auto space-y-6">
-      <AirportInput
-        label="From (City or Airport)"
-        name="source"
-        value={formData.source}
-        onChange={handleChange}
-        error={errors.source}
-        required
-        placeholder="e.g. BOS"
-      />
-      <AirportInput
-        label="To (City or Airport)"
-        name="destination"
-        value={formData.destination}
-        onChange={handleChange}
-        error={errors.destination}
-        required
-        placeholder="e.g. JFK"
-      />
-      <InputField
-        label="Departure Time"
-        type="datetime-local"
-        name="departureTime"
-        value={formData.departureTime}
-        onChange={handleChange}
-        error={errors.departureTime}
-        required
-        placeholder="Select departure time"
-      />
-      <InputField
-        label="Flight Duration (minutes)"
-        type="number"
-        name="duration"
-        value={formData.duration}
-        onChange={handleChange}
-        error={errors.duration}
-        required
-        placeholder="e.g. 120"
-      />
-      
-      <div className="space-y-4">
-        <h3 className="text-lg font-medium">Sun Preferences</h3>
+    <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Source */}
+      <div className="space-y-1">
+        <Label htmlFor="source">From (Airport Code)</Label>
+        <Input
+          id="source"
+          name="source"
+          placeholder="e.g. BOS"
+          value={formData.source}
+          onChange={handleChange}
+          required
+        />
+        {errors.source && <p className="text-sm text-red-500">{errors.source}</p>}
+      </div>
+
+      {/* Destination */}
+      <div className="space-y-1">
+        <Label htmlFor="destination">To (Airport Code)</Label>
+        <Input
+          id="destination"
+          name="destination"
+          placeholder="e.g. JFK"
+          value={formData.destination}
+          onChange={handleChange}
+          required
+        />
+        {errors.destination && <p className="text-sm text-red-500">{errors.destination}</p>}
+      </div>
+
+      {/* Departure Time */}
+      <div className="space-y-1">
+        <Label htmlFor="departureTime">Departure Time</Label>
+        <Input
+          id="departureTime"
+          type="datetime-local"
+          name="departureTime"
+          value={formData.departureTime}
+          onChange={handleChange}
+          required
+        />
+        {errors.departureTime && <p className="text-sm text-red-500">{errors.departureTime}</p>}
+      </div>
+
+      {/* Duration */}
+      <div className="space-y-1">
+        <Label htmlFor="duration">Flight Duration (minutes)</Label>
+        <Input
+          id="duration"
+          type="number"
+          name="duration"
+          placeholder="e.g. 120"
+          value={formData.duration}
+          onChange={handleChange}
+          required
+        />
+        {errors.duration && <p className="text-sm text-red-500">{errors.duration}</p>}
+      </div>
+
+      <Separator />
+
+      {/* Sun Preferences */}
+      <div className="space-y-2">
+        <p className="text-sm font-medium text-foreground">Sun Preferences</p>
         <div className="flex items-center space-x-2">
-          <input
-            type="checkbox"
+          <Checkbox
             id="wantsSunrise"
             name="wantsSunrise"
             checked={sunPreference.wantsSunrise}
-            onChange={handleSunPreferenceChange}
-            className="checkbox"
+            onCheckedChange={(checked: any) => {
+              handleCheckbox({ target: { name: 'wantsSunrise', checked } } as any);
+            }}
           />
-          <label htmlFor="wantsSunrise">I want to see the sunrise</label>
+          <Label htmlFor="wantsSunrise">I want to see the sunrise</Label>
         </div>
         <div className="flex items-center space-x-2">
-          <input
-            type="checkbox"
+          <Checkbox
             id="wantsSunset"
             name="wantsSunset"
             checked={sunPreference.wantsSunset}
-            onChange={handleSunPreferenceChange}
-            className="checkbox"
+            onCheckedChange={(checked: any) => {
+              handleCheckbox({ target: { name: 'wantsSunset', checked } } as any);
+            }}
           />
-          <label htmlFor="wantsSunset">I want to see the sunset</label>
+          <Label htmlFor="wantsSunset">I want to see the sunset</Label>
         </div>
       </div>
 
-      <button
-        type="submit"
-        className="btn btn-primary w-full"
-      >
+      {/* Submit */}
+      <Button type="submit" className="w-full mt-4">
         Get Seat Recommendation
-      </button>
+      </Button>
     </form>
   );
 }

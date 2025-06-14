@@ -10,6 +10,7 @@ import { Airport } from '@/types/airport';
 import { SeatRecommendation } from '@/types/flight';
 import { FlightMap } from '@/components/FlightMap';
 import { Feature, LineString } from 'geojson';
+import FlightMap3D from '@/components/FlightMap3D';
 
 export default function ResultPage() {
   const searchParams = useSearchParams();
@@ -83,7 +84,7 @@ export default function ResultPage() {
       <div className="min-h-screen pt-24 px-4 bg-muted">
         {airports.source && airports.destination && (
           <div className="flex space-x-8 w-full py-8">
-            <FlightMap 
+            <FlightMap
               sourceAirport={airports.source}
               destAirport={airports.destination}
               flightPath={flightPath}
