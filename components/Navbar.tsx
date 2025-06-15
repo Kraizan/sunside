@@ -7,7 +7,7 @@ export default function Navbar() {
   const { theme, setTheme } = useTheme()
 
   return (
-    <nav className="fixed top-0 left-0 right-0 p-4 bg-card/80 backdrop-blur-sm border-b z-10">
+    <nav className="sticky top-0 left-0 right-0 p-4 bg-background backdrop-blur-xl border-b z-100">
       <div className="max-w-5xl mx-auto flex justify-between items-center">
         <Link href="/" className="text-xl font-semibold text-foreground">
           SunSide

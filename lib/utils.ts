@@ -154,15 +154,15 @@ export function generateAdvancedRecommendation(
     dateAtLocation.setHours(12, 0, 0, 0);
     const times = SunCalc.getSunTimes(dateAtLocation, lat, lon, 0, false, true);
     const sunrise = { 
-      start: new Date(times.sunriseStart.value.getTime() - 2 * 60 * 1000), 
-      end: new Date(times.sunriseEnd.value.getTime() + 2 * 60 * 1000) 
+      start: new Date(times.sunriseStart.value.getTime() - 5 * 60 * 1000), 
+      end: new Date(times.sunriseEnd.value.getTime() + 5 * 60 * 1000) 
     };
     const sunset = { 
-      start: new Date(times.sunsetStart.value.getTime() - 2 * 60 * 1000), 
-      end: new Date(times.sunsetEnd.value.getTime() + 2 * 60 * 1000) 
+      start: new Date(times.sunsetStart.value.getTime() - 5 * 60 * 1000), 
+      end: new Date(times.sunsetEnd.value.getTime() + 5 * 60 * 1000) 
     };
     console.log(
-      `At ${currentTime.toLocaleTimeString()} at [${lat}, ${lon}]: Sunrise: ${sunrise.start.toLocaleTimeString()} - ${sunrise.end.toLocaleTimeString()}, Sunset: ${sunset.start.toLocaleTimeString()} - ${sunset.end.toLocaleTimeString()}`
+      `At ${currentTime.toLocaleString()} at [${lat}, ${lon}]: Sunrise: ${sunrise.start.toLocaleString()} - ${sunrise.end.toLocaleString()}, Sunset: ${sunset.start.toLocaleString()} - ${sunset.end.toLocaleString()}`
     );
     if (sunrise.start <= currentTime && sunrise.end >= currentTime) {
       sunriseEvent = { time: currentTime, location: { lat, lon } };

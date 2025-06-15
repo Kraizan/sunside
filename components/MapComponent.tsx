@@ -84,14 +84,14 @@ export function MapComponent({
 
   return (
     <motion.div 
-      className="h-full w-full"
+      className="h-full w-full rounded-xl"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
       <MapContainer
         bounds={bounds}
-        className="h-[calc(100vh-6rem)] w-full"
+        className="h-[calc(100vh-6rem)] w-full rounded-xl"
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'

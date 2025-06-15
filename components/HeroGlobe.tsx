@@ -92,6 +92,7 @@ export default function HeroGlobe() {
         ref={globeRef}
         globeImageUrl="//cdn.jsdelivr.net/npm/three-globe/example/img/earth-blue-marble.jpg"
         width={800}
+        height={800}
         backgroundColor="rgba(0,0,0,0)"
         // Airport markers as "points" or "labels"
         labelsData={AIRPORTS}

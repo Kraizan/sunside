@@ -70,6 +70,7 @@ export default function ResultPage() {
       setFlightPath(smooth as Feature<LineString>);
       
       const rec = generateAdvancedRecommendation(flightDetails, airports.source, airports.destination);
+      console.log(rec)
       setRecommendation(rec);
     }
   }, [airports.source, airports.destination]);
@@ -85,7 +86,7 @@ export default function ResultPage() {
   return (
     <main>
       <Navbar />
-      <div className="min-h-screen pt-24 bg-background">
+      <div className="max-h-screen bg-background">
         {airports.source && airports.destination && (
           <div className="flex w-full">
             <FlightMap
@@ -95,7 +96,7 @@ export default function ResultPage() {
               startTime={new Date(flightDetails.departureTime)}
               durationMinutes={flightDetails.duration}
               currentTime={currentTime}
-              className='w-3/5'
+              className='w-3/5 z-1 p-2 rounded-xl'
             />
             {recommendation && (
               <ResultSummary 
