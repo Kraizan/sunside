@@ -6,6 +6,7 @@ export interface MapComponentProps {
   destAirport: Airport;
   flightPath?: Feature<LineString>;
   startTime: Date;
+  currentTime: Date;
   durationMinutes: number;
 }
 
@@ -14,6 +15,7 @@ export interface FlightMapProps {
     destAirport: Airport;
     flightPath?: Feature<LineString>;
     startTime: Date;
+    currentTime: Date;
     durationMinutes: number;
     className?: string;
 }

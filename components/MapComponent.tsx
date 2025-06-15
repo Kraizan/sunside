@@ -10,8 +10,7 @@ import {
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { Icon, LatLngBounds } from "leaflet";
-import { useState, useMemo } from "react";
-import { SunSlider } from "./SunSlider";
+import { useState, useMemo, useEffect } from "react";
 import * as turf from "@turf/turf";
 import { getSubsolarPoint } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -47,6 +46,7 @@ export function MapComponent({
   flightPath,
   startTime,
   durationMinutes,
+  currentTime,
 }: MapComponentProps) {
   const [currentPosition, setCurrentPosition] = useState<[number, number] | null>(null);
   const [sunPosition, setSunPosition] = useState<[number, number] | null>(null);
@@ -59,7 +59,7 @@ export function MapComponent({
     setSunPosition([sunLat, sunLon]);
   };
 
-  const handleTimeChange = (currentTime: Date) => {
+  useEffect(() => {
     if (!flightPath) return;
 
     // Calculate progress along path
@@ -73,7 +73,7 @@ export function MapComponent({
     
     setCurrentPosition([along.geometry.coordinates[1], along.geometry.coordinates[0]]);
     updateSunPosition(currentTime);
-  };
+  }, [currentTime, flightPath]);
 
   const bounds = useMemo(() => {
     return new LatLngBounds(
@@ -84,14 +84,14 @@ export function MapComponent({
 
   return (
     <motion.div 
-      className="space-y-4 w-full"
+      className="h-full w-full"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
       <MapContainer
         bounds={bounds}
-        className="rounded-2xl shadow-lg h-[600px] w-full"
+        className="h-[calc(100vh-6rem)] w-full"
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
@@ -114,7 +114,7 @@ export function MapComponent({
 
         {flightPath && (
           <Polyline
-            positions={flightPath.geometry.coordinates.map(([lng, lat]) => [
+            positions={(flightPath.geometry.coordinates as [number, number][]).map(([lng, lat]) => [
               lat,
               lng,
             ])}
@@ -166,12 +166,6 @@ export function MapComponent({
           </>
         )}
       </MapContainer>
-
-      <SunSlider
-        durationMinutes={durationMinutes}
-        startTime={startTime}
-        onTimeChange={handleTimeChange}
-      />
     </motion.div>
   );
 }

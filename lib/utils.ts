@@ -6,19 +6,16 @@ import {
 import { Airport } from "@/types/airport";
 import * as turf from "@turf/turf";
 let SunCalc = require("suncalc3");
-import { clsx, type ClassValue } from "clsx"
-import { twMerge } from "tailwind-merge"
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs));
 }
-
 
 export function parseFlightDetails(
   searchParams: URLSearchParams
-): FlightDetails & {
-  sunPreference: SunPreference;
-} {
+): FlightDetails & { sunPreference: SunPreference } {
   const source = searchParams.get("source") || "";
   const destination = searchParams.get("destination") || "";
   const departureTime =
@@ -38,20 +35,84 @@ export function parseFlightDetails(
   };
 }
 
-export function getSunAzimuthAt(time: Date, coords: [number, number]): number {
-  const sunPos = SunCalc.getPosition(time, coords[0], coords[1]);
-  return ((sunPos.azimuth * 180) / Math.PI + 180) % 360;
+export function getSubsolarPoint(date: Date) {
+  const rad = Math.PI / 180;
+  const deg = 180 / Math.PI;
+
+  function toDays(d: Date): number {
+    return d.getTime() / 86400000 - 10957.5;
+  }
+  function solarMeanAnomaly(d: number): number {
+    return rad * (357.5291 + 0.98560028 * d);
+  }
+  function eclipticLongitude(M: number): number {
+    const C =
+      rad *
+      (1.9148 * Math.sin(M) +
+        0.02 * Math.sin(2 * M) +
+        0.0003 * Math.sin(3 * M));
+    const P = rad * 102.9372;
+    return M + C + P + Math.PI;
+  }
+  function sunCoords(dDays: number) {
+    const M = solarMeanAnomaly(dDays);
+    const L = eclipticLongitude(M);
+    const dec = Math.asin(Math.sin(L) * Math.sin(0) + Math.cos(L) * Math.cos(0) * Math.sin(L) * 0);
+    const ra = Math.atan2(Math.sin(L) * Math.cos(0), Math.cos(L));
+    return { dec, ra };
+  }
+  function siderealTime(dDays: number): number {
+    return rad * (280.16 + 360.9856235 * dDays);
+  }
+  function normalizeLon(lon: number): number {
+    return (((lon + 180) % 360 + 360) % 360) - 180;
+  }
+
+  const dDays = toDays(date);
+  const { ra, dec } = sunCoords(dDays);
+  const gst = siderealTime(dDays);
+  const lon = normalizeLon((ra * deg - gst * deg) % 360);
+  const lat = dec * deg;
+  return { lat, lon };
 }
 
-export function recommendSide(
-  flightDir: number,
-  sunAzimuth: number
+function normalizeLon(lon: number): number {
+  return (((lon + 180) % 360 + 360) % 360) - 180;
+}
+
+function shortestLonDiff(aLon: number, bLon: number): number {
+  // returns aLon - bLon normalized to [-180, +180)
+  let diff = aLon - bLon;
+  if (diff > 180) diff -= 360;
+  else if (diff < -180) diff += 360;
+  return diff;
+}
+
+function recommendSideByLonAngle(
+  flightCoords: [number, number],
+  destCoords: [number, number],
+  time: Date
 ): "LEFT" | "RIGHT" {
-  const relativeAngle = (sunAzimuth - flightDir + 360) % 360;
-  if (relativeAngle === 0 || relativeAngle === 360 || relativeAngle === 180) {
-    return "LEFT"; // default side when directly in front/back (could also be "NEUTRAL")
-  }
-  return relativeAngle > 0 && relativeAngle <= 180 ? "RIGHT" : "LEFT";
+  const [lonF, latF] = flightCoords;
+  const [lonD, latD] = destCoords;
+  const sub = getSubsolarPoint(time);
+
+  // Vector A = flight → destination
+  const dxA = shortestLonDiff(lonD, lonF);
+  const dyA = latD - latF;
+
+  // Vector B = flight → subsolar
+  const dxB = shortestLonDiff(sub.lon, lonF);
+  const dyB = sub.lat - latF;
+
+  // Compute dot and cross
+  const dot = dxA * dxB + dyA * dyB;
+  const cross = dxA * dyB - dyA * dxB;
+  // Signed angle from A to B
+  const theta = Math.atan2(cross, dot); // range (-π, π]
+
+  // If clockwise angle is smaller => theta < 0 => RIGHT, else LEFT
+  return theta < 0 ? "RIGHT" : "LEFT";
 }
 
 export function generateAdvancedRecommendation(
@@ -62,7 +123,6 @@ export function generateAdvancedRecommendation(
   const departureTime = new Date(flightDetails.departureTime);
   const duration = flightDetails.duration;
   const intervalMinutes = 1;
-
   const sourceCoords: [number, number] = [
     sourceAirport.location.lon,
     sourceAirport.location.lat,
@@ -71,101 +131,79 @@ export function generateAdvancedRecommendation(
     destAirport.location.lon,
     destAirport.location.lat,
   ];
-  const bearing = turf.bearing(sourceCoords, destCoords);
 
   const path = turf.lineString([sourceCoords, destCoords]);
-  const length = turf.length(path);
+  const totalLength = turf.length(path);
 
   let leftCount = 0;
   let rightCount = 0;
-
-  let sunriseEvent = null;
-  let sunsetEvent = null;
+  let sunriseEvent: { time: Date; location: { lat: number; lon: number } } | null = null;
+  let sunsetEvent: { time: Date; location: { lat: number; lon: number } } | null = null;
 
   for (let i = 0; i <= duration; i += intervalMinutes) {
     const currentTime = new Date(departureTime.getTime() + i * 60 * 1000);
-    const dist = (i / duration) * length;
-    const [lon, lat] = turf.along(path, dist).geometry.coordinates;
+    const distAlong = (i / (duration || 1)) * totalLength;
+    const coord = turf.along(path, distAlong).geometry.coordinates as [number, number];
 
-    const azimuthDeg = getSunAzimuthAt(currentTime, [lat, lon]);
-
-    const side = recommendSide(bearing, azimuthDeg);
+    const side = recommendSideByLonAngle(coord, destCoords, currentTime);
     if (side === "LEFT") leftCount++;
     else rightCount++;
 
-    // currentTime is a time within the flight
+    const [lon, lat] = coord;
     const dateAtLocation = new Date(currentTime);
-    dateAtLocation.setHours(12, 0, 0, 0); // Noon helps ensure it gets sunrise/sunset for *that* calendar day
-
+    dateAtLocation.setHours(12, 0, 0, 0);
     const times = SunCalc.getSunTimes(dateAtLocation, lat, lon, 0, false, true);
-
-    // Now compare with currentTime as before
-    const sunrise = {
-      start: times.sunriseStart.value,
-      end: times.sunriseEnd.value,
+    const sunrise = { 
+      start: new Date(times.sunriseStart.value.getTime() - 2 * 60 * 1000), 
+      end: new Date(times.sunriseEnd.value.getTime() + 2 * 60 * 1000) 
     };
-    const sunset = {
-      start: times.sunsetStart.value,
-      end: times.sunsetEnd.value,
+    const sunset = { 
+      start: new Date(times.sunsetStart.value.getTime() - 2 * 60 * 1000), 
+      end: new Date(times.sunsetEnd.value.getTime() + 2 * 60 * 1000) 
     };
-
+    console.log(
+      `At ${currentTime.toLocaleTimeString()} at [${lat}, ${lon}]: Sunrise: ${sunrise.start.toLocaleTimeString()} - ${sunrise.end.toLocaleTimeString()}, Sunset: ${sunset.start.toLocaleTimeString()} - ${sunset.end.toLocaleTimeString()}`
+    );
     if (sunrise.start <= currentTime && sunrise.end >= currentTime) {
       sunriseEvent = { time: currentTime, location: { lat, lon } };
     }
-
     if (sunset.start <= currentTime && sunset.end >= currentTime) {
       sunsetEvent = { time: currentTime, location: { lat, lon } };
     }
   }
 
-  // Determine side based on preferences
-  let side: "LEFT" | "RIGHT";
+  let finalSide: "LEFT" | "RIGHT";
   if (
     flightDetails.sunPreference.wantsSunrise &&
     sunriseEvent &&
     flightDetails.sunPreference.wantsSunset &&
     sunsetEvent
   ) {
-    side =
-      flightDetails.sunPreference.priority === "SUNRISE"
-        ? recommendSide(
-            bearing,
-            getSunAzimuthAt(sunriseEvent.time, [
-              sunriseEvent.location.lat,
-              sunriseEvent.location.lon,
-            ])
-          )
-        : recommendSide(
-            bearing,
-            getSunAzimuthAt(sunsetEvent.time, [
-              sunsetEvent.location.lat,
-              sunsetEvent.location.lon,
-            ])
-          );
+    const useEvent = flightDetails.sunPreference.priority === "SUNRISE" ? sunriseEvent : sunsetEvent;
+    finalSide = recommendSideByLonAngle(
+      [useEvent.location.lon, useEvent.location.lat],
+      destCoords,
+      useEvent.time
+    );
   } else if (flightDetails.sunPreference.wantsSunrise && sunriseEvent) {
-    side = recommendSide(
-      bearing,
-      getSunAzimuthAt(sunriseEvent.time, [
-        sunriseEvent.location.lat,
-        sunriseEvent.location.lon,
-      ])
+    finalSide = recommendSideByLonAngle(
+      [sunriseEvent.location.lon, sunriseEvent.location.lat],
+      destCoords,
+      sunriseEvent.time
     );
   } else if (flightDetails.sunPreference.wantsSunset && sunsetEvent) {
-    side = recommendSide(
-      bearing,
-      getSunAzimuthAt(sunsetEvent.time, [
-        sunsetEvent.location.lat,
-        sunsetEvent.location.lon,
-      ])
+    finalSide = recommendSideByLonAngle(
+      [sunsetEvent.location.lon, sunsetEvent.location.lat],
+      destCoords,
+      sunsetEvent.time
     );
   } else {
-    side = leftCount > rightCount ? "LEFT" : "RIGHT";
+    finalSide = leftCount > rightCount ? "LEFT" : "RIGHT";
   }
 
-  let reason = `The sun is mostly on the ${side.toLowerCase()} side during your journey.`;
-
+  const reason = `The sun is mostly on the ${finalSide.toLowerCase()} side during your journey.`;
   return {
-    side,
+    side: finalSide,
     reason,
     sunrise: sunriseEvent
       ? { time: sunriseEvent.time, location: sunriseEvent.location }
@@ -174,68 +212,4 @@ export function generateAdvancedRecommendation(
       ? { time: sunsetEvent.time, location: sunsetEvent.location }
       : undefined,
   };
-}
-
-export function getSubsolarPoint(date: Date) {
-  const rad = Math.PI / 180;
-  const deg = 180 / Math.PI;
-
-  // Convert a Date to number of days since J2000.0
-  function toDays(date: Date): number {
-    return date.getTime() / 86400000 - 10957.5;
-  }
-
-  function rightAscension(l: number, b: number): number {
-    return Math.atan2(
-      Math.sin(l) * Math.cos(0) - Math.tan(b) * Math.sin(0),
-      Math.cos(l)
-    );
-  }
-
-  function declination(l: number, b: number): number {
-    return Math.asin(
-      Math.sin(b) * Math.cos(0) + Math.cos(b) * Math.sin(0) * Math.sin(l)
-    );
-  }
-
-  function solarMeanAnomaly(d: number): number {
-    return rad * (357.5291 + 0.98560028 * d);
-  }
-
-  function eclipticLongitude(M: number): number {
-    const C =
-      rad *
-      (1.9148 * Math.sin(M) +
-        0.02 * Math.sin(2 * M) +
-        0.0003 * Math.sin(3 * M));
-    const P = rad * 102.9372; // perihelion of the Earth
-    return M + C + P + Math.PI;
-  }
-
-  function sunCoords(d: number) {
-    const M = solarMeanAnomaly(d);
-    const L = eclipticLongitude(M);
-    return {
-      dec: declination(L, 0),
-      ra: rightAscension(L, 0),
-    };
-  }
-
-  function siderealTime(d: number, lw: number): number {
-    return rad * (280.16 + 360.9856235 * d) - lw;
-  }
-
-  function normalizeLongitude(lon: number): number {
-    return ((((lon + 180) % 360) + 360) % 360) - 180;
-  }
-
-  const d = toDays(date);
-  const { ra, dec } = sunCoords(d);
-  const gst = siderealTime(d, 0); // Greenwich sidereal time in radians
-
-  // Longitude = difference between RA and GST
-  const lon = normalizeLongitude((ra - gst) * deg);
-  const lat = dec * deg;
-
-  return { lat, lon };
 }

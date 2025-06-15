@@ -10,7 +10,6 @@ import { Airport } from '@/types/airport';
 import { SeatRecommendation } from '@/types/flight';
 import { FlightMap } from '@/components/FlightMap';
 import { Feature, LineString } from 'geojson';
-import FlightMap3D from '@/components/FlightMap3D';
 
 export default function ResultPage() {
   const searchParams = useSearchParams();
@@ -23,6 +22,11 @@ export default function ResultPage() {
   });
   const [recommendation, setRecommendation] = useState<SeatRecommendation | null>(null);
   const [flightPath, setFlightPath] = useState<Feature<LineString> | undefined>(undefined);
+  const [currentTime, setCurrentTime] = useState<Date>(new Date(flightDetails.departureTime));
+
+  const handleTimeChange = (newTime: Date) => {
+    setCurrentTime(newTime);
+  };
 
   useEffect(() => {
     async function fetchAirportData() {
@@ -81,21 +85,25 @@ export default function ResultPage() {
   return (
     <main>
       <Navbar />
-      <div className="min-h-screen pt-24 px-4 bg-muted">
+      <div className="min-h-screen pt-24 bg-background">
         {airports.source && airports.destination && (
-          <div className="flex space-x-8 w-full py-8">
+          <div className="flex w-full">
             <FlightMap
               sourceAirport={airports.source}
               destAirport={airports.destination}
               flightPath={flightPath}
               startTime={new Date(flightDetails.departureTime)}
               durationMinutes={flightDetails.duration}
-              className='w-3/5 px-5'
+              currentTime={currentTime}
+              className='w-3/5'
             />
             {recommendation && (
               <ResultSummary 
                 flightDetails={flightDetails}
                 recommendation={recommendation}
+                startTime={new Date(flightDetails.departureTime)}
+                durationMinutes={flightDetails.duration}
+                onTimeChange={handleTimeChange}
               />
             )}
           </div>
