@@ -10,7 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { Sunrise, Sunset } from "lucide-react";
 import type { FlightDetails, FormErrors, SunPreference } from "@/types/flight";
 
-export default function FlightForm() {
+export function FlightForm() {
   const router = useRouter();
   const [formData, setFormData] = useState<FlightDetails>({
     source: "",

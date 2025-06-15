@@ -3,13 +3,12 @@
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Navbar from '@/components/Navbar';
-import ResultSummary from '@/components/ResultSummary';
 import { parseFlightDetails, generateAdvancedRecommendation } from '@/lib/utils';
 import * as turf from '@turf/turf';
 import { Airport } from '@/types/airport';
 import { SeatRecommendation } from '@/types/flight';
-import { FlightMap } from '@/components/FlightMap';
 import { Feature, LineString } from 'geojson';
+import { FlightMap, ResultSummary, LoadingState, ErrorState } from '@/components/results';
 
 export default function ResultPage() {
   const searchParams = useSearchParams();
@@ -76,11 +75,11 @@ export default function ResultPage() {
   }, [airports.source, airports.destination]);
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <LoadingState />;
   }
 
   if (error) {
-    return <div>Error: {error}</div>;
+    return <ErrorState error={error} />;
   }
 
   return (

@@ -1,7 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Navbar from '@/components/Navbar';
-import FlightForm from '@/components/FlightForm';
-import HeroGlobe from '@/components/HeroGlobe';
+import {FlightForm, HeroGlobe} from '@/components/plan';
 
 export default function PlanPage() {
   return (

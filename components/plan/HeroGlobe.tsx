@@ -66,7 +66,7 @@ function generateRandomFlights(count: number) {
   return arcs;
 }
 
-export default function HeroGlobe() {
+export function HeroGlobe() {
   const globeRef = useRef<any>(null);
   const [arcsData, setArcsData] = useState<any[]>([]);
 
