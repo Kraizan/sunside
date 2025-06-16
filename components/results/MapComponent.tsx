@@ -39,15 +39,21 @@ export function MapComponent({
       along.geometry.coordinates[1],
       along.geometry.coordinates[0],
     ]);
-    updateSunPosition(currentTime);
-  }, [currentTime, flightPath]);
-
-  const updateSunPosition = (currentTime: Date) => {
-    if (!currentPosition || !flightPath) return;
 
     const { lat: sunLat, lon: sunLon } = getSubsolarPoint(currentTime);
     setSunPosition([sunLat, sunLon]);
-  };
+
+  }, [currentTime, flightPath, durationMinutes, startTime]);
+
+  useEffect(() => {
+    if (!flightPath) return;
+  
+    const start = turf.along(flightPath, 0, { units: "kilometers" });
+    const next = turf.along(flightPath, 0.01, { units: "kilometers" });
+  
+    const bearing = turf.bearing(start, next);
+    setPlaneRotation(bearing);
+  }, [flightPath]);
 
   const bounds = useMemo(() => {
     return new LatLngBounds(

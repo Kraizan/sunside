@@ -13,7 +13,7 @@ export function MapErrorState() {
             Map Loading Failed
           </h3>
           <p className="text-sm text-muted-foreground">
-            We couldn't load the flight map. Please check your connection and try again.
+            We couldn&apos;t load the flight map. Please check your connection and try again.
           </p>
         </div>
         <Button 

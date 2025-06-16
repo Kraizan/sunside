@@ -11,16 +11,12 @@ if (!AERODATA_API_KEY || !AERODATA_BASE_URL) {
 
 export async function GET(
   request: Request,
-  { params }: { params: { iata: string } }
+  context: { params: Promise<{ iata: string }> }
 ) {
-  const iataParam = params;
-  const iata = (await iataParam).iata;
+  const { iata } = await context.params;
 
-  if (!iata || typeof iata !== 'string' || iata.length !== 3) {
-    return NextResponse.json(
-      { error: "Invalid IATA code" },
-      { status: 400 }
-    );
+  if (!iata || iata.length !== 3) {
+    return NextResponse.json({ error: "Invalid IATA code" }, { status: 400 });
   }
 
   try {

@@ -18,7 +18,7 @@ export function LoadingState() {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, []);
+  });
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[80vh] space-y-8 px-4">

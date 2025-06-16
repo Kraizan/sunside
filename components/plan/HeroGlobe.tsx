@@ -3,6 +3,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
+import type { GlobeMethods } from "react-globe.gl";
 
 // Dynamically import Globe to avoid SSR issues
 const Globe = dynamic(() => import("react-globe.gl"), { ssr: false });
@@ -13,6 +14,13 @@ type AirportMarker = {
   name: string;
   lat: number;
   lng: number;
+};
+
+type ArcData = {
+  startLat: number;
+  startLng: number;
+  endLat: number;
+  endLng: number;
 };
 
 // Hardcoded 5 airports
@@ -46,7 +54,7 @@ function generateRandomFlights(count: number) {
   const arcs = [];
   const n = AIRPORTS.length;
   for (let i = 0; i < count; i++) {
-    let a = randomIndex(n);
+    const a = randomIndex(n);
     let b = randomIndex(n);
     // ensure distinct endpoints
     while (b === a) {
@@ -59,16 +67,14 @@ function generateRandomFlights(count: number) {
       startLng: src.lng,
       endLat: dst.lat,
       endLng: dst.lng,
-      // Optionally randomize color or keep consistent
-      color: ["lightblue", "deepskyblue"],
     });
   }
   return arcs;
 }
 
 export function HeroGlobe() {
-  const globeRef = useRef<any>(null);
-  const [arcsData, setArcsData] = useState<any[]>([]);
+  const globeRef = useRef<GlobeMethods | undefined>(undefined);
+  const [arcsData, setArcsData] = useState<ArcData[]>([]);
 
   // On mount, set up transparent background and initial flights
   useEffect(() => {
@@ -86,8 +92,7 @@ export function HeroGlobe() {
   }, []);
 
   return (
-    <div
-      className="w-1/2">
+    <div className="w-1/2">
       <Globe
         ref={globeRef}
         globeImageUrl="//cdn.jsdelivr.net/npm/three-globe/example/img/earth-blue-marble.jpg"
@@ -96,20 +101,20 @@ export function HeroGlobe() {
         backgroundColor="rgba(0,0,0,0)"
         // Airport markers as "points" or "labels"
         labelsData={AIRPORTS}
-        labelLat={(d: any) => (d as AirportMarker).lat}
-        labelLng={(d: any) => (d as AirportMarker).lng}
-        labelText={(d: any) => (d as AirportMarker).code}
+        labelLat={(d) => (d as AirportMarker).lat}
+        labelLng={(d) => (d as AirportMarker).lng}
+        labelText={(d) => (d as AirportMarker).code}
         labelSize={1.2}
         labelDotRadius={0.5}
         labelColor={() => "orange"}
         labelResolution={2}
         // Flight arcs
         arcsData={arcsData}
-        arcStartLat={(d: any) => d.startLat}
-        arcStartLng={(d: any) => d.startLng}
-        arcEndLat={(d: any) => d.endLat}
-        arcEndLng={(d: any) => d.endLng}
-        arcColor={(d: any) => d.color}
+        arcStartLat={(d) => (d as ArcData).startLat}
+        arcStartLng={(d) => (d as ArcData).startLng}
+        arcEndLat={(d) => (d as ArcData).endLat}
+        arcEndLng={(d) => (d as ArcData).endLng}
+        arcColor={["lightblue", "deepskyblue"]}
         arcAltitude={0.25}
         arcStroke={0.5}
         arcDashLength={0.4}
@@ -132,7 +137,7 @@ export function HeroGlobe() {
               const controls = globeRef.current.controls();
               controls.autoRotate = true;
               controls.autoRotateSpeed = 0.3;
-            } catch (e) {
+            } catch {
               // ignore
             }
           }

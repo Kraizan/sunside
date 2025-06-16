@@ -61,12 +61,20 @@ export function FlightForm() {
 
     localStorage.removeItem("flightFormData");
 
-    const queryParams = new URLSearchParams({
-      ...(formData as any),
+    const queryObj: Record<string, string> = {
+      source: formData.source,
+      destination: formData.destination,
+      departureTime: formData.departureTime,
+      duration: formData.duration.toString(),
       wantsSunrise: sunPreference.wantsSunrise.toString(),
       wantsSunset: sunPreference.wantsSunset.toString(),
-      priority: sunPreference.priority || "",
-    });
+    };
+    
+    if (sunPreference.priority) {
+      queryObj.priority = sunPreference.priority;
+    }
+    
+    const queryParams = new URLSearchParams(queryObj);    
 
     router.push(`/result?${queryParams}`);
   };

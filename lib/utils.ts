@@ -5,7 +5,7 @@ import {
 } from "@/types/flight";
 import { Airport } from "@/types/airport";
 import * as turf from "@turf/turf";
-let SunCalc = require("suncalc3");
+import SunCalc from "suncalc3";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 

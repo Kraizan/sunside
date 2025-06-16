@@ -17,7 +17,7 @@ export function SunEvents({ recommendation }: SunEventsProps) {
       </h3>
       {!recommendation.sunrise && !recommendation.sunset ? (
         <p className="text-center">
-          You won't experience any sunrise or sunset during this flight.
+          You won&apos;t experience any sunrise or sunset during this flight.
         </p>
       ) : (
         <div className={`grid justify-between gap-4 ${recommendation.sunrise && recommendation.sunset ? 'grid-cols-2' : 'grid-cols-1'}`}>
