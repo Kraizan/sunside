@@ -6,49 +6,55 @@ interface AirportState {
   destination: Airport | null;
 }
 
-interface UseAirportDataReturn {
-  airports: AirportState;
-  loading: boolean;
-  error: string | null;
-}
-
-export function useAirportData(sourceCode: string, destinationCode: string): UseAirportDataReturn {
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [airports, setAirports] = useState<AirportState>({
-    source: null,
-    destination: null
+export function useAirportData(sourceCode: string, destinationCode: string) {
+  const [state, setState] = useState<{
+    airports: AirportState;
+    loading: boolean;
+    error: string | null;
+  }>({
+    airports: { source: null, destination: null },
+    loading: true,
+    error: null
   });
 
   useEffect(() => {
-    async function fetchAirportData() {
-      try {
-        const [sourceData, destData] = await Promise.all([
-          fetch(`/api/airports/${sourceCode}`).then(res => res.json()),
-          fetch(`/api/airports/${destinationCode}`).then(res => res.json())
-        ]);
+    if (!sourceCode || !destinationCode) {
+      setState(s => ({ ...s, loading: false }));
+      return;
+    }
 
+    let mounted = true;
+    
+    Promise.all([
+      fetch(`/api/airports/${sourceCode}`).then(res => res.json()),
+      fetch(`/api/airports/${destinationCode}`).then(res => res.json())
+    ])
+      .then(([sourceData, destData]) => {
+        if (!mounted) return;
         if ('error' in sourceData || 'error' in destData) {
           throw new Error('Could not find airport data');
         }
-
-        setAirports({
-          source: sourceData as Airport,
-          destination: destData as Airport
+        setState({
+          airports: {
+            source: sourceData,
+            destination: destData
+          },
+          loading: false,
+          error: null
         });
+      })
+      .catch(err => {
+        if (mounted) {
+          setState({
+            airports: { source: null, destination: null },
+            loading: false,
+            error: 'Failed to fetch airport data'
+          });
+        }
+      });
 
-      } catch (err) {
-        setError('Failed to fetch airport data');
-        console.error('Error fetching airport data:', err);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    if (sourceCode && destinationCode) {
-      fetchAirportData();
-    }
+    return () => { mounted = false; };
   }, [sourceCode, destinationCode]);
 
-  return { airports, loading, error };
+  return state;
 }

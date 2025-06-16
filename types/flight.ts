@@ -3,6 +3,7 @@ export interface FlightDetails {
   destination: string;
   departureTime: string;
   duration: number;
+  sunPreference: SunPreference
 }
 
 export interface FormErrors {
