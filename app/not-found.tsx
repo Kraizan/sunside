@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Sun, CloudSun, Plane } from "lucide-react";
+import { Sun, Plane } from "lucide-react";
 
 export default function NotFound() {
   return (
