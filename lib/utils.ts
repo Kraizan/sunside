@@ -57,7 +57,9 @@ export function getSubsolarPoint(date: Date) {
   function sunCoords(dDays: number) {
     const M = solarMeanAnomaly(dDays);
     const L = eclipticLongitude(M);
-    const dec = Math.asin(Math.sin(L) * Math.sin(0) + Math.cos(L) * Math.cos(0) * Math.sin(L) * 0);
+    const dec = Math.asin(
+      Math.sin(L) * Math.sin(0) + Math.cos(L) * Math.cos(0) * Math.sin(L) * 0
+    );
     const ra = Math.atan2(Math.sin(L) * Math.cos(0), Math.cos(L));
     return { dec, ra };
   }
@@ -65,7 +67,7 @@ export function getSubsolarPoint(date: Date) {
     return rad * (280.16 + 360.9856235 * dDays);
   }
   function normalizeLon(lon: number): number {
-    return (((lon + 180) % 360 + 360) % 360) - 180;
+    return ((((lon + 180) % 360) + 360) % 360) - 180;
   }
 
   const dDays = toDays(date);
@@ -76,39 +78,27 @@ export function getSubsolarPoint(date: Date) {
   return { lat, lon };
 }
 
-function shortestLonDiff(aLon: number, bLon: number): number {
-  // returns aLon - bLon normalized to [-180, +180)
-  let diff = aLon - bLon;
-  if (diff > 180) diff -= 360;
-  else if (diff < -180) diff += 360;
-  return diff;
-}
-
 function recommendSideByLonAngle(
   flightCoords: [number, number],
   destCoords: [number, number],
   time: Date
 ): "LEFT" | "RIGHT" {
-  const [lonF, latF] = flightCoords;
-  const [lonD, latD] = destCoords;
   const sub = getSubsolarPoint(time);
 
-  // Vector A = flight → destination
-  const dxA = shortestLonDiff(lonD, lonF);
-  const dyA = latD - latF;
+  const bearingToDest = turf.bearing(
+    turf.point(flightCoords),
+    turf.point(destCoords)
+  );
 
-  // Vector B = flight → subsolar
-  const dxB = shortestLonDiff(sub.lon, lonF);
-  const dyB = sub.lat - latF;
+  const bearingToSun = turf.bearing(
+    turf.point(flightCoords),
+    turf.point([sub.lon, sub.lat])
+  );
 
-  // Compute dot and cross
-  const dot = dxA * dxB + dyA * dyB;
-  const cross = dxA * dyB - dyA * dxB;
-  // Signed angle from A to B
-  const theta = Math.atan2(cross, dot); // range (-π, π]
+  // Calculate shortest clockwise angle difference [-180, +180]
+  const angleDiff = ((bearingToSun - bearingToDest + 540) % 360) - 180;
 
-  // If clockwise angle is smaller => theta < 0 => RIGHT, else LEFT
-  return theta < 0 ? "RIGHT" : "LEFT";
+  return angleDiff > 0 ? "RIGHT" : "LEFT";
 }
 
 export function generateAdvancedRecommendation(
@@ -133,13 +123,22 @@ export function generateAdvancedRecommendation(
 
   let leftCount = 0;
   let rightCount = 0;
-  let sunriseEvent: { time: Date; location: { lat: number; lon: number } } | null = null;
-  let sunsetEvent: { time: Date; location: { lat: number; lon: number } } | null = null;
+  let sunriseEvent: {
+    time: Date;
+    location: { lat: number; lon: number };
+  } | null = null;
+  let sunsetEvent: {
+    time: Date;
+    location: { lat: number; lon: number };
+  } | null = null;
 
   for (let i = 0; i <= duration; i += intervalMinutes) {
     const currentTime = new Date(departureTime.getTime() + i * 60 * 1000);
     const distAlong = (i / (duration || 1)) * totalLength;
-    const coord = turf.along(path, distAlong).geometry.coordinates as [number, number];
+    const coord = turf.along(path, distAlong).geometry.coordinates as [
+      number,
+      number
+    ];
 
     const side = recommendSideByLonAngle(coord, destCoords, currentTime);
     if (side === "LEFT") leftCount++;
@@ -149,15 +148,15 @@ export function generateAdvancedRecommendation(
     const dateAtLocation = new Date(currentTime);
     dateAtLocation.setHours(12, 0, 0, 0);
     const times = SunCalc.getSunTimes(dateAtLocation, lat, lon, 0, false, true);
-    const sunrise = { 
-      start: new Date(times.sunriseStart.value.getTime() - 5 * 60 * 1000), 
-      end: new Date(times.sunriseEnd.value.getTime() + 5 * 60 * 1000) 
+    const sunrise = {
+      start: new Date(times.sunriseStart.value.getTime() - 5 * 60 * 1000),
+      end: new Date(times.sunriseEnd.value.getTime() + 5 * 60 * 1000),
     };
-    const sunset = { 
-      start: new Date(times.sunsetStart.value.getTime() - 5 * 60 * 1000), 
-      end: new Date(times.sunsetEnd.value.getTime() + 5 * 60 * 1000) 
+    const sunset = {
+      start: new Date(times.sunsetStart.value.getTime() - 5 * 60 * 1000),
+      end: new Date(times.sunsetEnd.value.getTime() + 5 * 60 * 1000),
     };
-    
+
     if (sunrise.start <= currentTime && sunrise.end >= currentTime) {
       sunriseEvent = { time: currentTime, location: { lat, lon } };
     }
@@ -173,7 +172,10 @@ export function generateAdvancedRecommendation(
     flightDetails.sunPreference.wantsSunset &&
     sunsetEvent
   ) {
-    const useEvent = flightDetails.sunPreference.priority === "SUNRISE" ? sunriseEvent : sunsetEvent;
+    const useEvent =
+      flightDetails.sunPreference.priority === "SUNRISE"
+        ? sunriseEvent
+        : sunsetEvent;
     finalSide = recommendSideByLonAngle(
       [useEvent.location.lon, useEvent.location.lat],
       destCoords,
