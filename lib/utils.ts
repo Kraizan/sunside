@@ -157,9 +157,7 @@ export function generateAdvancedRecommendation(
       start: new Date(times.sunsetStart.value.getTime() - 5 * 60 * 1000), 
       end: new Date(times.sunsetEnd.value.getTime() + 5 * 60 * 1000) 
     };
-    console.log(
-      `At ${currentTime.toLocaleString()} at [${lat}, ${lon}]: Sunrise: ${sunrise.start.toLocaleString()} - ${sunrise.end.toLocaleString()}, Sunset: ${sunset.start.toLocaleString()} - ${sunset.end.toLocaleString()}`
-    );
+    
     if (sunrise.start <= currentTime && sunrise.end >= currentTime) {
       sunriseEvent = { time: currentTime, location: { lat, lon } };
     }
