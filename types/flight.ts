@@ -26,8 +26,8 @@ export interface SeatRecommendation {
   };
 }
 
-export interface SunPreference {
+export type SunPreference = {
   wantsSunrise: boolean;
   wantsSunset: boolean;
-  priority: 'SUNRISE' | 'SUNSET' | null;
-}
+  priority: "SUNRISE" | "SUNSET" | null;
+};
