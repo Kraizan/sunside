@@ -76,10 +76,6 @@ export function getSubsolarPoint(date: Date) {
   return { lat, lon };
 }
 
-function normalizeLon(lon: number): number {
-  return (((lon + 180) % 360 + 360) % 360) - 180;
-}
-
 function shortestLonDiff(aLon: number, bLon: number): number {
   // returns aLon - bLon normalized to [-180, +180)
   let diff = aLon - bLon;
